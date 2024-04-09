@@ -4,6 +4,26 @@ pragma solidity 0.8.18;
 import {Token} from "./Token.sol";
 import {IERC20} from "./IERC20.sol";
 
+// Inflation attack - attacker deposits tokens into the contract to inflate the value of the shares
+
+// Inflation attack on this contract
+// 1. User 0 deposits 1 token, and get 1 share
+// 2. User 0 donates 100 * 1e18 (100 tokens) (inflating the value of the share)
+// 3. User 1 deposits 100 * 1e18 (100 tokens) -> 0 shares minted
+// 4. User 0 withdraws 200 * 1e18 (200 tokens) + 1
+
+//    | balance        | user 0 shares | user 1 shares | total supply |
+// 1. |              1 |            1  |             0 |            1 |
+// 2. | 100 * 1e18 + 1 |            1  |             0 |            1 |
+// 3. | 200 * 1e18 + 1 |            1  |             0 |            1 |
+// 3.1. user 1 shares = (100 * 1e18 * 1) / (100 * 1e18 + 1) == 0
+// 4. |              0 |             0 |             0 |            0 |
+
+// Protections
+// - Min shares -> protection from front running
+// - Internal balance -> protection from donation
+// - Dead shares -> contract is first depositor
+// - Decimal offset (OpenZeppelin ERC4626)
 contract Vault {
     IERC20 public immutable token;
 
